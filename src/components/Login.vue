@@ -22,7 +22,9 @@
 </template>
 
 <script>
-export default {
+  import  { loginCheck } from "../network/login";
+
+  export default {
   name: 'Login',
   data(){
     //自定义验证规则
@@ -36,8 +38,8 @@ export default {
     return{
       //表单数据
       formInfo: {
-        name:'',
-        password:'',
+        name:'cuimaomao',
+        password:'cuimaomao123',
         checkbox:false
       },
       //表单验证规则
@@ -45,7 +47,7 @@ export default {
         name:[
           { required: true, message: '请输入用户名', trigger: 'blur' },
           { min: 5, max: 15, message: '长度在 5 到 15 个字符', trigger: 'blur' },
-          //自定义验证规则
+          //再加上自定义验证规则
           {validator: ownerUsercheck, trigger: 'blur'}
         ],
         password:[
@@ -55,24 +57,44 @@ export default {
       }
     }
   },
-  methods:{
+    methods:{
     //重置表单对象
     resetForm(){
       this.$refs.myform.resetFields();
     },
     login(){
-     this.$refs.myform.validate((valid) => {
+     this.$refs.myform.validate(async valid => {
        if(!valid){
          return this.$message.info('用户名/密码格式错误')
        } else if(!this.formInfo.checkbox){
          return this.$message.info('请勾选《管理员条例》')
        }else{
-         console.log('全部OK拉')
+         //可以发送网络请求啦
+       const res = await this.logincheck(this.formInfo.name,this.passWord)
+       if(res.code == 0){
+         //存下登录验证后接收到的token
+         this.$message.success('恭喜，登录成功')
+         window.sessionStorage.setItem('token',res.data.token)
+         await this.$router.replace('/home');
+       }else if(res.code == 4){
+         return this.$message.error('抱歉，用户名/密码错误，登录失败')
+        }else{
+         return this.$message.info('抱歉，网络验证失败')
        }
-
+       }
      })
+    },
+    //网络请求方法
+    logincheck(username,password){
+     return loginCheck(username,password)
     }
-  }
+  },
+    //计算属性，用于密码md5加密
+    computed:{
+      passWord:function () {
+        return this.$md5(this.formInfo.password)
+      }
+    }
 }
 </script>
 
